@@ -1,16 +1,11 @@
-#######################################
 # checkvis.py
-# Erica Lastufka 02/19/2015
+# Author: Erica Lastufka
+# Date: 19 Feb 2014
 
-# Description: script to check that plots in ms correspond with plots in weblog
-#######################################
+# script to check that plots in ms correspond with plots in weblog
+# 	- run in directory that also contains your ms with command: execfile('checkvis.py')
+# suggestions for improvements welcome!
 
-#######################################
-# Usage:
-# 	execfile('checkvis.py')
-#	must run in same directory as the ms you wish to plot
-#	User is asked for input as to what they want to plot and whether to plot it in the plotms gui or send everything to a pdf
-#######################################
 
 #get list of ms files
 
