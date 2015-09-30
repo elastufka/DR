@@ -363,7 +363,7 @@ def cont_image(script,parameters, comments, mask = False): # what about multiple
     if comments == False:
         script = script + com.im_cont_header() + sc.contvis() + sc.contimagename() + sc.rmtables() + clean
     else:
-        script = script + sc.com.im_cont() + sc.contvis() + sc.contimagename() + sc.rmtables() + clean + com.cont_rms()
+        script = script + com.im_cont() + sc.contvis() + sc.contimagename() + sc.rmtables() + clean + com.cont_rms()
     return script
 
 def contsub(script,parameters, continfo, linespw, comments, fitspw = False): # this is going to change all your spw indices if you do it...
