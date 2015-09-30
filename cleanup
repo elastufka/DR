@@ -1,0 +1,55 @@
+#!/bin/bash
+# ------------------------------------------------------------------
+# cleanup routine for logfiles etc
+#          
+# 
+
+# make one log file
+
+logname='casapy*'
+
+for i in $logname ; do # cat $i >> finallog
+	cat $i >> casapy.log
+        rm -f $i
+done
+
+# same for ipython logs
+
+logname='ipython*'
+
+for i in $logname ; do # cat $i >> finallog
+	cat $i >> ipython.log
+        rm -f $i
+done
+
+# delete all backups except calibrated_final.ms.backup
+
+backupname='calibrated_final.ms.backup*'
+
+for i in $backupname ; do
+	if [ "$i" != "calibrated_final.ms.backup" ];
+		then
+			rm -rf $i;
+	fi
+done
+
+# get rid of self cal stuff
+# rm -rf *_ap.*
+# rm -rf *_p1.*
+# rm -rf *_p2.*
+# rm -rf *_p3.*
+
+# rm -rf *_ap_*
+# rm -rf *_p1_*
+# rm -rf *_p2_*
+# rm -rf *_p3_*
+
+# get rid of core dumps
+rm -rf core*
+
+# and .last files
+rm -rf *.last
+
+# delete scriptForImaging backup
+rm -f scriptForImaging.py.backup
+
