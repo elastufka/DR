@@ -404,7 +404,7 @@ def testmain():
 
 #testmain() #seems to work for imaging so far 
 '''
-def main():
+def main(): # will ask for the OT file twice ... fix that
     project_dict = pi.main()
     OTfile = OT_info.getAOT() 
     makeDirectories(project_dict)
@@ -419,9 +419,9 @@ def main():
         getScript(project_dict) #don't need this if we're generating the script
         untarWeblog()
         fillReadme(project_dict, AOT=OTfile)
-        OT_dict = OT_info.getOTinfo(project_dict['SB_name'], AOTpath = OTfile) # just fill the dictionary instead....
+        #OT_dict = OT_info.getOTinfo(project_dict['SB_name'], AOTpath = OTfile) # just fill the dictionary instead....
         #li.main(project_dict=project_dict, OT_dict = OT_dict)
-        sg.main(project_dict = project_dict, OT_dict = OT_dict, comments = True) # = OT_dict
+        sg.generate(project_dict['SB_name'], project_dict['project_path'], comments = True) # = OT_dict
     else : 
         os.chdir('%s' % project_dict['project_path'])
         script_name = downloadASDM(project_dict)
