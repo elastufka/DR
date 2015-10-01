@@ -245,7 +245,10 @@ def main():
     asdm = para[3]
     codes = fixCodes(mous_code, project_number, SB_name)
     if proj_type == 'Imaging': # move this elsewhere?
-        project_path = wd + '/Reduce_' + project_number[7:12]
+        if len(wd) <= 8:# it's just a lustre username
+            project_path = wd + '/Reduce_' + project_number[7:12]
+        else:
+            project_path = wd
         try:
             os.chdir(project_path)
             version = casa_version() # will have to figure this out in pre-imaging
@@ -253,7 +256,10 @@ def main():
             version = ''
         #project_base = '%s/sg_ouss_id/group_ouss_id/member_ouss_id/' % (project_path)
     if proj_type == 'Manual':
-        project_path = wd + '/'+ codes[0]  
+        if len(wd) <= 8: # it's just a lustre username
+            project_path = wd + '/'+ codes[0]  
+        else:
+            project_path = wd
         version = '4.4.0'
         #project_base = project_path
     

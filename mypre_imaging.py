@@ -332,78 +332,28 @@ def fillReadme(project_dict, AOT=False):
     fill_README.write2Readme(project_dict['project_type'], project_dict['project_path'], readme_info, project_dict['casa_version']) # why won't this write??
     #fill_README.testwrite()
     fill_README.cleanup(AOTdir['AOT'])
+    return AOT_dict
 
-#def list_params(): # do the thing
-#    thing='test'
-'''
-def testmain():
-  
-    project_dict = {'SB_name': 'NGC6357__a_03_7M',
- 'tarball': '2013.1.01391.S.MOUS.uid___A001_X147_X27e.SBNAME.NGC6357__a_03_7M.tgz',
- 'asdm': ['uid://A002/X9e0695/X7fd8',
-  'uid://A002/X9dcf39/X3484',
-  'uid://A002/X9dcf39/X3085'],
- 'mous_code': 'uid___A001_X147_X27e',
- 'number_asdms': 3,
- 'pipeline_path': '/lustre/naasc/pipeline/pipeline_env_r31667_casa422_30986.sh',
- 'project_number': '2013.1.01391.S',
- 'project_path': '/lustre/naasc/elastufk/testscript',
- 'project_type': 'Imaging'}
-
-    project_dict = {'SB_name': 'WISE_220_b_09_TE',
- 'tarball': '2013.1.00152.S.MOUS.uid___A001_X141_Xf.SBNAME.WISE_220_b_09_TE.tgz',
- 'asdm': ['uid://A002/Xa3aadb/X29f6'],
- 'mous_code': 'uid___A001_X141_Xf',
- 'number_asdms': 1,
- 'pipeline_path': 'N/A',
- 'project_number': '2013.1.00152.S',
- 'project_path': '/lustre/naasc/elastufk/Reduce_Xf',
- 'project_type': 'Manual'}
+def generate_script(project_dict, OT_dict, comments=True):
+    os.chdir(project_dict['project_path'])
+    parameters = sg.get_parameters(project_dict = project_dict, OT_dict = OT_dict) 
+    script = sg.script_data_prep(parameters, project_dict, comments)
+    spws = sg.sort_spws(parameters)
+    continfo = spws[0]
+    lineinfo = spws[1]
+    linespws = spws[2]
+    script = sg.make_continuum(script,parameters, project_dict, continfo, comments, flagchannels=False)
+    script = sg.image_setup(script,parameters, comments)
+    script = sg.cont_image(script,parameters, comments)
+    if lineinfo != []:
+        script = sg.contsub(script,parameters, continfo, linespws, comments)
+        script = sg.line_image(script,parameters, lineinfo, comments)
+    script = sg.pbcor_fits(script)
+    sg.write_script(script,project_dict, filename = 'scriptForImaging.py')
+    # cleanup temp files
+    OT_info.cleanup(parameters['AOT'])
 
 
-    
-    #AOT='/lustre/naasc/elastufk/ManualReduction/2013.1.01391.S_v3.aot'
-    AOT = '/lustre/naasc/elastufk/Imaging/2013.1.00152.S_v2.aot'
-
-
-    makeDirectories(project_dict)
-    #fillReadme(project_dict, AOT=AOT)
-    if project_dict['project_type'] == 'Imaging':
-        #untarStuff(project_dict)
-        #os.chdir('%s/sg_ouss_id/group_ouss_id/member_ouss_id/' % project_dict['project_path'])
-        pipelineChanges()
-        downloadASDM(project_dict)
-        testcopyFiles(project_dict) 
-        runPipeline(project_dict)
-        untarWeblog()
-        fillReadme(project_dict, AOT=AOT)
-        #list_params()
-    else: 
-        os.chdir('%s' % project_dict['project_path'])
-        #script_name = downloadASDM(project_dict)
-        getScript(project_dict)
-	for asdm in project_dict['asdm']:
-	    os.chdir('Calibration_%s' % str(asdm[-4:]))
-	    ms_name = glob.glob('*.ms')
-            #print ms_name
-	    snr = subprocess.Popen(["casa", "-c", "au.gaincalSNR(\'%s\')" % ms_name], shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-	    snr.wait()
-	    #print snr.communicate()
-        runscript = raw_input('Run calibration script through and check the visibilities by generating a pdf of the weblog plots? Warning - this will take a while and do it for all the asdms!')
-        os.chdir('../')
-        if runscript == 'Y':
-             for asdm in project_dict['asdm']:
-	         os.chdir('Calibration_%s' % str(asdm[-4:]))
-                 script_name = glob.glob('*.py')
-                 subprocess.call(["casa", "-c", "'%s'" % script_name[0]]) # needs mysteps = [] ...
-                 subprocess.call(["casa", "-c", "/lustre/naasc/elastufk/Python/checkvispdf.py"]) # does this need the path?
-                 os.chdir('../')
-
-    fillReadme(project_dict, AOT=AOT)
-    getScript(project_dict)
-
-#testmain() #seems to work for imaging so far 
-'''
 def main(): # will ask for the OT file twice ... fix that
     project_dict = pi.main()
     OTfile = OT_info.getAOT() 
@@ -418,15 +368,15 @@ def main(): # will ask for the OT file twice ... fix that
         runPipeline(project_dict)
         getScript(project_dict) #don't need this if we're generating the script
         untarWeblog()
-        fillReadme(project_dict, AOT=OTfile)
+        OT_dict = fillReadme(project_dict, AOT=OTfile)
         #OT_dict = OT_info.getOTinfo(project_dict['SB_name'], AOTpath = OTfile) # just fill the dictionary instead....
         #li.main(project_dict=project_dict, OT_dict = OT_dict)
-        sg.generate(project_dict['SB_name'], project_dict['project_path'], comments = True) # = OT_dict
+        generate_script(project_dict, OT_dict)
     else : 
         os.chdir('%s' % project_dict['project_path'])
         script_name = downloadASDM(project_dict)
         #getScript(project_dict)
-        fillReadme(project_dict, AOT=OTfile)
+        OT_dict = fillReadme(project_dict, AOT=OTfile)
 	for asdm in project_dict['asdm']:
 	    os.chdir('%s/Calibration_%s' % (project_dict['project_path'],str(asdm[-4:])))
 	    ms_name = glob.glob('*.ms')
