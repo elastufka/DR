@@ -407,14 +407,17 @@ veltype='radio'\n\n"
         lineclean = sc.mosaic_line_clean()
     else:
         lineclean = sc.single_line_clean()
-
-    script = script + com.im_line_header()+ finalv + linev + sname
+    if comments == False:
+        script = script + com.im_line_header()+ finalv + linev + sname
+    else:
+        script = script + com.im_line() + finalv + linev + sname
+ 
     #for as many lines as there are, do this:
     for n in range(0,len(lineinfo)):
         if comments == False:
             script = script + lineinfo[n]['transition'] + "spw = '" + lineinfo[n]['spw_index']+ "'\n" + lineim + lineinfo[n]['restfreq'] + lineinfo[n]['plotcmd'] + '\n\n' + vparam + sc.rmtablesline() + lineclean
         else:
-            script = script + com.im_line()+ finalv + linev + sname + transname + linespw + lineim + linerfreq + com.velparam()+ plotcmd + '\n\n' + vparam + com.veltype() + com.line_cvel() + sc.rmtablesline() + lineclean + com.line_rms() 
+            script = script + lineinfo[n]['transition'] + "spw = '" + lineinfo[n]['spw_index']+ "'\n" + lineim + lineinfo[n]['restfreq'] + com.velparam()+ lineinfo[n]['plotcmd']  + '\n\n' + vparam + com.veltype() + com.line_cvel() + sc.rmtablesline() + lineclean + com.line_rms() 
  
     return script
 
