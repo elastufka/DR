@@ -331,7 +331,7 @@ def fillReadme(project_dict, AOT=False):
     readme_info = fill_README.getInfo(project_dict,AOT_dict)
     fill_README.write2Readme(project_dict['project_type'], project_dict['project_path'], readme_info, project_dict['casa_version']) # why won't this write??
     #fill_README.testwrite()
-    fill_README.cleanup(AOTdir['AOT'])
+    #fill_README.cleanup(AOTdir['AOT'])
     return AOT_dict
 
 def generate_script(project_dict, OT_dict, comments=True):
@@ -389,25 +389,25 @@ def main(): # will ask for the OT file twice ... fix that
             text = open('gaincalSNR.txt','w')
             text.writelines(gaincal[0])
             text.close()
-        runscript = raw_input('Run calibration script through and check the visibilities by generating a pdf of the weblog plots? Warning - this will take a while and do it for all the asdms!')
-        os.chdir('../')
-        if runscript == 'Y':
-             for asdm in project_dict['asdm']:
-	         os.chdir('%s/Calibration_%s' % (project_dict['project_path'],str(asdm[-4:])))
-                 script_name = glob.glob('*.py')
-                 script = open(script_name, 'rw+') # insert line mysteps = [] at beginning of script...
-                 steps = script.readlines()
-                 steps[1] = 'mysteps = []\n'
-                 script.writelines(steps)
-                 script.close() 
-                 subprocess.call(["casa", "-c", "'%s'" % script_name[0]])
-                 script = open(script_name, 'rw+') # remove line mysteps = [] 
-                 steps = script.readlines() 
-                 steps[1] = '\n'
-                 script.writelines(steps)
-                 script.close() 
+        #runscript = raw_input('Run calibration script through and check the visibilities by generating a pdf of the weblog plots? Warning - this will take a while and do it for all the asdms!')
+        #os.chdir('../')
+        #if runscript == 'Y':
+        #     for asdm in project_dict['asdm']:
+	#         os.chdir('%s/Calibration_%s' % (project_dict['project_path'],str(asdm[-4:])))
+        #         script_name = glob.glob('*.py')
+        #         script = open(script_name, 'rw+') # insert line mysteps = [] at beginning of script...
+        #         steps = script.readlines()
+        #         steps[1] = 'mysteps = []\n'
+        #         script.writelines(steps)
+        #         script.close() 
+        #         subprocess.call(["casa", "-c", "'%s'" % script_name[0]])
+        #         script = open(script_name, 'rw+') # remove line mysteps = [] 
+        #         steps = script.readlines() 
+        #         steps[1] = '\n'
+        #         script.writelines(steps)
+        #         script.close() 
                  
-                 subprocess.call(["casa", "-c", "/lustre/naasc/elastufk/Python/checkvispdf.py"]) # does this need the path?
+        #         subprocess.call(["casa", "-c", "/lustre/naasc/elastufk/Python/checkvispdf.py"]) # does this need the path?
                  os.chdir('../')
         print 'Make sure to run the script generator once your calibrated or combined ms is in the Imaging/ directory!'
 
