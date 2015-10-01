@@ -246,8 +246,11 @@ def main():
     codes = fixCodes(mous_code, project_number, SB_name)
     if proj_type == 'Imaging': # move this elsewhere?
         project_path = wd + '/Reduce_' + project_number[7:12]
-        os.chdir(project_path)
-        version = casa_version() # will have to figure this out in pre-imaging
+        try:
+            os.chdir(project_path)
+            version = casa_version() # will have to figure this out in pre-imaging
+        except OSError:
+            version = ''
         #project_base = '%s/sg_ouss_id/group_ouss_id/member_ouss_id/' % (project_path)
     if proj_type == 'Manual':
         project_path = wd + '/'+ codes[0]  
