@@ -414,6 +414,7 @@ def main():
         pipelineChanges()
         downloadASDM(project_dict)
         copyFiles(project_dict) #don't actually do this yet
+        project_dict['casa_version'] = pi.casa_version()
         runPipeline(project_dict)
         getScript(project_dict) #don't need this if we're generating the script
         untarWeblog()
