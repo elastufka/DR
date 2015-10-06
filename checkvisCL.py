@@ -155,73 +155,77 @@ for num in vislist:
         
     else:
         #manually
-
+        spws=raw_input('spws of interest? String please.')
+        if not spws:
+            spws= msmd.spwsforintent(intent=("*TARGET*")) # casa apparently can't do this in 4.2.2 anymore, but there are always 4 spws anyway
+        #spws=[0,1,2,3]#len(spws)
+            msmd.close() 
         #calibrated amplitude vs frequency - have to check colorize on display and manually tell it to color; also have to change x axis when looking through different spws
         ans=raw_input('Plot amp v frequency for phase calibrator? (Y/N)')
         if ans == 'Y':
 	    for phase in phasea:
-            	plotms(vis=vis, field=phase,yaxis='amp', xaxis='freq', avgtime=avgtime,coloraxis='ant1',iteraxis='spw',avgscan=T,avgantenna=T)
+            	plotms(vis=vis, field=phase,yaxis='amp', xaxis='freq', avgtime=avgtime,coloraxis='ant1',iteraxis='spw',avgscan=T,avgantenna=T, ydatacolumnn= 'corrected', spw=spws)
             	pause()
 
         #Calibrated amplitude vs frequency for BANDPASS calibrator all antennas and correlations, coloured by antenna.
         ans=raw_input('Plot amp v frequency for bandpass calibrator? (Y/N)')
         if ans == 'Y':
 	    for bandpass in bandpassa:            
-		plotms(vis=vis, field=bandpass,yaxis='amp', xaxis='freq', avgtime=avgtime,avgscan=T,avgantenna=T,iteraxis='spw',coloraxis='ant1')
+		plotms(vis=vis, field=bandpass,yaxis='amp', xaxis='freq', avgtime=avgtime,avgscan=T,avgantenna=T,iteraxis='spw',coloraxis='ant1', ydatacolumnn= 'corrected', spw=spws)
         	pause()
 
         #phase vs frequency for  phase calibrator
         ans=raw_input('Plot phase v frequency for phase calibrator? (Y/N)')
         if ans == 'Y':
 	    for phase in phasea:
-            	plotms(vis=vis, field=phase, yaxis='phase', xaxis='freq', avgtime=avgtime, coloraxis='ant1', iteraxis='spw', avgscan=T, avgantenna=T, plotrange=[0,0,-100,100])
+            	plotms(vis=vis, field=phase, yaxis='phase', xaxis='freq', avgtime=avgtime, coloraxis='ant1', iteraxis='spw', avgscan=T, avgantenna=T, plotrange=[0,0,-100,100], ydatacolumnn= 'corrected', spw=spws)
             	pause()
 
         #phase vs frequency for bandpass calibrator
         ans=raw_input('Plot phase v frequency for bandpass calibrator? (Y/N)')
         if ans == 'Y':
 	    for bandpass in bandpassa:            
-		plotms(vis=vis, field=bandpass, yaxis='phase', xaxis='freq', avgtime=avgtime, coloraxis='ant1', iteraxis='spw', avgscan=T, avgantenna=T, plotrange=[0,0,-100,100])
+		plotms(vis=vis, field=bandpass, yaxis='phase', xaxis='freq', avgtime=avgtime, coloraxis='ant1', iteraxis='spw', avgscan=T, avgantenna=T, plotrange=[0,0,-100,100], ydatacolumnn= 'corrected', spw=spws)
             	pause()
     
         #amp vs uvdist
         ans=raw_input('Plot amp v UV distance? (Y/N)')
         if ans == 'Y':
 	    for amp in ampa:
-     	       plotms(vis=vis, field=amp,yaxis='amp', xaxis='uvdist', avgchannel='1e6', iteraxis='spw',coloraxis='corr')
+     	       plotms(vis=vis, field=amp,yaxis='amp', xaxis='uvdist', avgchannel='1e6', iteraxis='spw',coloraxis='corr', ydatacolumnn= 'corrected', spw=spws)
      	       pause()
     
         #amp vs time for all:
         ans=raw_input('Plot amp v time? (Y/N)')
         if ans == 'Y':
 	    for amp in ampa:
-      	      plotms(vis=vis, yaxis='amp', xaxis='time', iteraxis='spw',coloraxis='field', avgchannel='100')
+      	      plotms(vis=vis, yaxis='amp', xaxis='time', iteraxis='spw',coloraxis='field', avgchannel='100', ydatacolumnn= 'corrected')
        	      pause() 
 
         # phase v time all:
         ans=raw_input('Plot phase v time? (Y/N)')
         if ans == 'Y':
 	    for phase in phasea:
-      	      plotms(vis=vis, yaxis='phase', xaxis='time', iteraxis='spw',coloraxis='field',avgchannel='100',  avgantenna=T, plotrange=[0,0,-100,100])
+      	      plotms(vis=vis, yaxis='phase', xaxis='time', iteraxis='spw',coloraxis='field',avgchannel='100',  avgantenna=T, plotrange=[0,0,-100,100], ydatacolumnn= 'corrected')
       	      pause()
     
         #science target
         ans=raw_input('Plot amp v frequency for science target? (Y/N)')
         if ans == 'Y':
 	    for target in targeta:
-            	plotms(vis=vis,  field=target, yaxis='amp', xaxis='freq', uvrange=uvr, iteraxis='spw', avgtime=avgtime, avgscan=T, avgantenna=T)   
+            	plotms(vis=vis,  field=target, yaxis='amp', xaxis='freq', uvrange=uvr, iteraxis='spw', avgtime=avgtime, avgscan=T, avgantenna=T, ydatacolumnn= 'corrected', spw=spws)   
             	pause()
 
         ans=raw_input('Plot phase v frequency for science target? (Y/N)')
         if ans == 'Y':    
 	    for target in targeta:            
-		plotms(vis=vis, field=target, yaxis='phase',  xaxis='freq', uvrange=uvr, iteraxis='spw', avgtime=avgtime, avgscan=T, avgantenna=T, plotrange=[0,0,-100,100])
+		plotms(vis=vis, field=target, yaxis='phase',  xaxis='freq', uvrange=uvr, iteraxis='spw', avgtime=avgtime, avgscan=T, avgantenna=T, plotrange=[0,0,-100,100], ydatacolumnn= 'corrected', spw=spws)
             	pause()
             
         ans=raw_input('Plot amp v UV distance for science target? (Y/N)')
         if ans == 'Y':
 	    for target in targeta:
-           	plotms(vis=vis, field=target, yaxis='amp', xaxis='uvdist', iteraxis='spw')
+           	plotms(vis=vis, field=target, yaxis='amp', xaxis='uvdist', iteraxis='spw', ydatacolumnn= 'corrected', spw=spws)
 
     
 
