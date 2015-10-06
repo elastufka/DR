@@ -111,6 +111,7 @@ def project_type(): # make this behave a little better...maybe not a while loop
     return proj_type
 
 def directory():
+    import sys
     lustre = raw_input('> Path to working directory? To use or create directory Reduce_XXXXX in your lustre area, enter your username. ').strip()
     if lustre[len(lustre)-1] != '/':
         if lustre.find('/') != -1:
@@ -268,6 +269,5 @@ def main():
     return project_dict
 
 if __name__ == "__main__":
-    #most_info('NGC6357__a_03_7M','/lustre/naasc/elastufk/Imaging/testscript/sg_ouss_id/group_ouss_id/member_ouss_id/calibrated')
     main()
 

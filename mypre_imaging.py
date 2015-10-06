@@ -408,7 +408,7 @@ def main(): # will ask for the OT file twice ... fix that
         #         script.close() 
                  
         #         subprocess.call(["casa", "-c", "/lustre/naasc/elastufk/Python/checkvispdf.py"]) # does this need the path?
-                 os.chdir('../')
+        #os.chdir('../')
         print 'Make sure to run the script generator once your calibrated or combined ms is in the Imaging/ directory!'
 
 if __name__ == "__main__" :
