@@ -366,7 +366,7 @@ def main(): # will ask for the OT file twice ... fix that
         copyFiles(project_dict) #don't actually do this yet
         project_dict['casa_version'] = pi.casa_version()
         runPipeline(project_dict)
-        getScript(project_dict) #don't need this if we're generating the script
+        #getScript(project_dict) #don't need this if we're generating the script
         untarWeblog()
         OT_dict = fillReadme(project_dict, AOT=OTfile)
         #OT_dict = OT_info.getOTinfo(project_dict['SB_name'], AOTpath = OTfile) # just fill the dictionary instead....

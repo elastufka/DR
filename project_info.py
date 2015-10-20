@@ -110,23 +110,23 @@ def project_type(): # make this behave a little better...maybe not a while loop
         proj_type = raw_input('> Please enter either Imaging or Manual: ').strip()
     return proj_type
 
-def directory():
+def directory( proj_type, project_number, codes):
     import sys
     lustre = raw_input('> Path to working directory? To use or create directory Reduce_XXXXX in your lustre area, enter your username. ').strip()
     if lustre[len(lustre)-1] != '/':
         if lustre.find('/') != -1:
              directory = lustre
-        else: 
-             directory = '/lustre/naasc/' + lustre 
+        elif proj_type == 'Imaging': 
+             directory = '/lustre/naasc/' + lustre + '/Reduce_' + project_number[7:12]
+        else:
+             directory = '/lustre/naasc/' + lustre + '/'+ codes[0]  
     else:
         lustre = lustre[0:len(lustre)-1]
         if lustre.find('/') != -1:
              directory = lustre
-        else: 
-             directory = '/lustre/naasc/' + lustre 
 
-    if os.path.isdir(directory) == False:
-        sys.exit('ERROR: %s does not exist or read/write permissions are not granted!' % directory)
+    #if os.path.isdir(directory) == False:
+    #    sys.exit('ERROR: %s does not exist or read/write permissions are not granted!' % directory)
 
     return directory
 
@@ -165,15 +165,18 @@ def casa_version():
         os.chdir('sg_ouss_id/group_ouss_id/member_ouss_id/log/')
     elif 'log' in folders:
         os.chdir('log/')
-    # open casa logger and see what version was uesd
-    logs = glob.glob('casapy*.log')
-    log = logs[0]
-    logtext = open(log,'r')
-    lines = logtext.readlines()
-    for line in lines:
-        if 'CASA Version' in line:
-             version = line[51:56]
-             break
+    # open casa logger and see what version was used
+    try:
+        logs = glob.glob('casapy*.log')
+        log = logs[0]
+        logtext = open(log,'r')
+        lines = logtext.readlines()
+        for line in lines:
+            if 'CASA Version' in line:
+                 version = line[51:56]
+                 break
+    except IndexError:
+        version=''
     os.chdir('../')
     return version
 
@@ -238,32 +241,23 @@ def most_info(SBname=False, project_path = False): # project_path is the /lustre
 
 def main():
     proj_type = project_type()
-    wd = directory()
     para = paragraph()
     project_number = para[0].strip()
     mous_code = para[1].strip()
     SB_name = para[2].strip()
     asdm = para[3]
     codes = fixCodes(mous_code, project_number, SB_name)
+    project_path = directory(proj_type, project_number, codes)
+
     if proj_type == 'Imaging': # move this elsewhere?
-        if len(wd) <= 8:# it's just a lustre username
-            project_path = wd + '/Reduce_' + project_number[7:12]
-        else:
-            project_path = wd
         try:
             os.chdir(project_path)
             version = casa_version() # will have to figure this out in pre-imaging
         except OSError:
             version = ''
-        #project_base = '%s/sg_ouss_id/group_ouss_id/member_ouss_id/' % (project_path)
     if proj_type == 'Manual':
-        if len(wd) <= 8: # it's just a lustre username
-            project_path = wd + '/'+ codes[0]  
-        else:
-            project_path = wd
         version = '4.4.0'
-        #project_base = project_path
-    
+
     project_dict = project_info_dict(proj_type, project_path, project_number, codes, SB_name, asdm, version)
     #print project_dict
     return project_dict
