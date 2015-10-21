@@ -361,10 +361,13 @@ def main(): # will ask for the OT file twice ... fix that
     if project_dict['project_type'] == 'Imaging':
         untarStuff(project_dict)
         os.chdir('%s/sg_ouss_id/group_ouss_id/member_ouss_id/' % project_dict['project_path'])
-        pipelineChanges()
+        project_dict['casa_version'] = pi.casa_version()
+        if project_dict['casa_version'] != '4.3.1':
+            pipelineChanges()
+
         downloadASDM(project_dict)
         copyFiles(project_dict) #don't actually do this yet
-        project_dict['casa_version'] = pi.casa_version()
+        #project_dict['casa_version'] = pi.casa_version()
         runPipeline(project_dict)
         #getScript(project_dict) #don't need this if we're generating the script
         untarWeblog()
