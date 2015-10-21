@@ -214,7 +214,7 @@ def makeDirectories(project_dict):
            os.system('mkdir %s' % manual_path[manual_path.rfind('/')+1:])
        os.chdir('%s' % manual_path[manual_path.rfind('/')+1:])
        for asdmn in project_dict['asdm']:
-           os.system('mkdir Calibration_%s' % str(asdmn[-4:]))
+           os.system('mkdir Calibration_%s' % str(asdmn[asdmn.rfind('X'):])) #make it go from the X to the end
        os.system('mkdir Imaging')
        os.system('mkdir Combination')
        os.chdir('Combination')
