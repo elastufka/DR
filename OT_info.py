@@ -28,6 +28,9 @@
 # 	getSB(SB_name, namespaces)
 #	    Finds the correct SchedBlock*.xml file for the given SB
 
+#	cleanup(AOT)
+#            Gets rid of the temp/ directory
+
 #	getDictionaries(AOTdir, AOTfile, prop_root, proj_root, science_root, sg, namespaces)
 #	    Puts everything into 2 dictionaries, one with the file info (OT_dict) and one with the actual XML roots (XML_roots)
 
@@ -41,7 +44,12 @@ import xml.etree.ElementTree as ET
 import sys
 
 def getAOT():
-    files = glob.glob('*.aot')
+    try: 
+        folder=os.environ('AOT')
+        os.chdir(folder)
+        files = glob.glob('*.aot')
+    except KeyError:
+        files = glob.glob('*.aot')
     #print files
     if not files:
        AOT=raw_input('Where is the AOT file located? Full path and file name please. ')
