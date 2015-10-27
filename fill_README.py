@@ -118,6 +118,7 @@ def write2Readme(project_type, project_path, project_info, version):
     readmenew.writelines(rinfo) # why doesn't this write???
     readmenew.close()
     os.system('mv -f readme.txt README.header.txt') #don't know why I have to do all this...
+    os.system('chmod 666 README.header.txt')
 
 def cleanup(AOT):
     AOTdir = AOT[0:AOT.rfind('/')]
