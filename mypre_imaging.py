@@ -356,7 +356,7 @@ def generate_script(project_dict, OT_dict, comments=True):
 
 def main(): # will ask for the OT file twice ... fix that
     project_dict = pi.main()
-    OTfile = OT_info.getAOT() 
+    OTfile = OT_info.getAOT(project_number=project_dict['project_number']) 
     makeDirectories(project_dict)
     if project_dict['project_type'] == 'Imaging':
         untarStuff(project_dict)
@@ -364,7 +364,6 @@ def main(): # will ask for the OT file twice ... fix that
         project_dict['casa_version'] = pi.casa_version()
         if project_dict['casa_version'] != '4.3.1':
             pipelineChanges()
-
         downloadASDM(project_dict)
         copyFiles(project_dict) #don't actually do this yet
         #project_dict['casa_version'] = pi.casa_version()

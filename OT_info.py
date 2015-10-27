@@ -43,21 +43,30 @@ import glob
 import xml.etree.ElementTree as ET
 import sys
 
-def getAOT():
+def getAOT(project_number=False):
     try: 
-        folder=os.environ('AOT')
+        folder=os.environ['AOT']
         os.chdir(folder)
-        files = glob.glob('*.aot')
+        if project_number != False:
+            files = glob.glob('%s*.aot' % project_number)
+        else:
+            files = glob.glob('*.aot')
     except KeyError:
-        files = glob.glob('*.aot')
+        if project_number != False:
+            files = glob.glob('%s*.aot' % project_number)
+        else:
+            files = glob.glob('*.aot')
     #print files
     if not files:
        AOT=raw_input('Where is the AOT file located? Full path and file name please. ')
     elif len(files) == 1:
         AOT = os.getcwd() + '/' + files[0]
     else:
-        print files
-        AOT=raw_input('Which is the correct file for this project? ')
+        if project_number != False:
+            files = glob.glob('%s*.aot' % project_number)
+        else:
+            print files
+            AOT=raw_input('Which is the correct file for this project? ')
 
     return AOT
 
