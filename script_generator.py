@@ -129,7 +129,6 @@ def get_parameters(project_dict=False, OT_dict=False):
 #########################################
 
 def sort_spws(parameters): 
-
     # fix the indices if the project contains multiple ms's or was combined earlier:
     try:
         os.chdir('Imaging')
@@ -218,7 +217,7 @@ def sort_spws(parameters):
             width = width + ',' + width0 
             widthall = widthall + ',' + widthall0
 
-    if contspws != '': # continuum subtraction is going to change the indices so fix them here. Yay.
+    if (contspws != '' or contspws != spwall): # continuum subtraction is going to change the indices so fix them here. Yay.
         line_spws_per_eb = len(lineinfo) #line spws per eb
 
         for n in range(0, len(lineinfo)):
@@ -232,10 +231,6 @@ def sort_spws(parameters):
             # update plotms commands
             lineinfo[n]['plotcmd'] = li.genPlotMS(lineinfo[n], parameters['rframe'], lineinfo[n]['spw_index'])
             lineinfo[n]['restfreq'] = "restfreq = '" + lineinfo[n]['restfreq'] + "GHz'\n"
-
-    if width == '': # if no continuum-dedicated spws, just put all of them in the arguments and add a comment to contspws:
-        width = widthall
-        contspws =  spwall + "' # Because there are no continuum-dedicated spws, all of the spws are included. You will need to flag out line emission before proceeding. \n\n"
 
     continfo = {'cont_index': contspws, 'width': width, 'widthall': widthall, 'spwall': spwall}
 
@@ -266,11 +261,16 @@ def script_data_prep(parameters, project_dict, comments):
         script = script + com.pointing() + sc.pointing_table()
 
     # to concat or not concat?
-    if parameters['nms'] > 1:
+    if project_dict['project_type'] == 'Imaging' and parameters['nms'] > 1:
         if comments == False: 
             script = script + com.combine_header() + sc.concat_setup() +com.split()  + multipleex + vishead + sc.split_science() + sc.checksplit() 
         else:
             script = script + com.combine() + sc.concat_setup() +com.split() +  multipleex + vishead + com.vishead() + sc.split_science() + com.check_split() + sc.checksplit() 
+    else:
+        if comments == False:
+            script = script + com.split() + singleex + vishead + sc.split_science() + sc.checksplit() 
+        else:
+             script = script + com.split() + singleex + vishead + com.vishead() + sc.split_science() + com.check_split() + sc.checksplit() 
   
     os.chdir(project_dict['project_path'])
     if project_dict['project_type'] == 'Manual':
@@ -280,13 +280,12 @@ def script_data_prep(parameters, project_dict, comments):
                 script = script + com.split() + multipleex + vishead + sc.split_science() + sc.checksplit() 
             else:
                 script = script + com.split()+ multipleex + vishead + com.vishead() + sc.split_science() + com.check_split() + sc.checksplit() 
-        os.chdir('../')
-
-    else: # you only have one EB!
-        if comments == False:
-            script = script + com.split() + singleex + vishead + sc.split_science() + sc.checksplit() 
         else:
-             script = script + com.split() + singleex + vishead + com.vishead() + sc.split_science() + com.check_split() + sc.checksplit() 
+            if comments == False:
+                script = script + com.split() + singleex + vishead + sc.split_science() + sc.checksplit() 
+            else:
+                 script = script + com.split() + singleex + vishead + com.vishead() + sc.split_science() + com.check_split() + sc.checksplit() 
+        os.chdir('../')
   
     #if you need to regrid your velocities... build this in later
 
@@ -296,7 +295,12 @@ def script_data_prep(parameters, project_dict, comments):
 def make_continuum(script, parameters, project_dict, continfo, comments, flagchannels=False):
     width = continfo['width']
     widthall = continfo['widthall']
-    contspws = "contspws = '" + continfo['cont_index'] + "'\n"
+    if continfo['cont_index'] == continfo['spwall']:
+        contspws = "contspws = '" + continfo['cont_index'] + "' # Because there are no continuum-dedicated spws, all of the spws are included. You will need to flag out line emission before proceeding. \n\n"
+        width=widthall
+    else:
+        contspws = "contspws = '" + continfo['cont_index'] + "'\n"
+        width=widthall
     spwall = continfo['spwall']
 
     if comments == False:
@@ -309,7 +313,7 @@ def make_continuum(script, parameters, project_dict, continfo, comments, flagcha
         splitcomplete = sc.splitcont()  + "      width=[" + width + "], # widths for all the spws are [" + widthall + "]\n      datacolumn='data')\n\n"
     else: # use all the spws, not just continuum-dedicated:
         flagchannels = "flagchannels = '" + flagchannels + "'\n\n"
-        contspws = "contspws = '" + spwall + "'\n"
+        contspws = "contspws = '" + spwall + "\n"
         splitcomplete = sc.splitcont()  + "      width=[" + widthall + "], # widths for all the spws are [" + widthall + "]\n      datacolumn='data')\n\n"
 
     # 4.4 fixes....
@@ -320,6 +324,7 @@ def make_continuum(script, parameters, project_dict, continfo, comments, flagcha
         script = script + contspws + initweights + sc.flags() + flagchannels + sc.flagdata() + sc.plotspw() + sc.contvis() + splitcomplete + sc.flagrestore() + checkweights + sc.plotuv()
     else:
         script = script + contspws + sc.flags() + flagchannels + sc.flagdata() + sc.contvis() + splitcomplete + sc.flagrestore() + sc.plotuv()
+
 
     return script
 
@@ -453,7 +458,7 @@ def write_script(script, project_dict, filename=False):
 def generate(SB_name, project_path = False, comments = True):
     if project_path == False:
         project_path = os.getcwd()    
-    dictionaries = pi.most_info(SB_name, project_path)    
+    dictionaries = pi.most_info(SB_name, project_path=project_path)    
     project_dict = dictionaries[0]
     OT_dict = dictionaries[1]
     os.chdir(project_path)
@@ -470,7 +475,7 @@ def generate(SB_name, project_path = False, comments = True):
         script = contsub(script,parameters, continfo, linespws, comments)
         script = line_image(script,parameters, lineinfo, comments)
     script = pbcor_fits(script)
-    write_script(script,project_dict, filename = 'scriptForImaging.py')
+    write_script(script,project_dict, filename = 'scriptForImaging_test.py')
     # cleanup temp files
     OT_info.cleanup(parameters['AOT'])
 
