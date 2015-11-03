@@ -239,7 +239,7 @@ def downloadASDM(project_dict):
     else:
         script_name=[]
         for asdm in asdm:
-	    os.chdir('Calibration_%s' % str(asdm[-4:]))
+	    os.chdir('Calibration_%s' % str(asdm[asdm.rfind('X'):]))
 	    subprocess.call(['source /lustre/naasc/pipeline/pipeline_env.asdmExportLight.sh && asdmExportLight %s' % asdm], shell=True)
 	    #changing the names of the asdm to match when it was changed by asdmExport
 	    new_asdm = asdm.replace('/','_').replace(':','_')
