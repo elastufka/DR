@@ -86,4 +86,7 @@ def staging(project_number, user_name, test=False):
     pool_outputs= pool.map(stage_data, mous_glob)
     print pool_outputs
     print("--- %s seconds ---" % (time.time() - start_time))
-
+    os.chdir(sinfo[0])
+    os.system('sudo chown -R %s: data*' % user_name)
+    os.system('sudo chgrp -R naascssg data*' )
+    os.system('sudo chmod 770 -R data*')
