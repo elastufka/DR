@@ -1,9 +1,8 @@
-#######################################
+"""#######################################
 # mypre_imaging.py
-# Erica Lastufka 08/20/2015 and Brian Kirk
+# Erica Lastufka 08/20/2015 
 
 #Description: This is a coded version of the directions in https://safe.nrao.edu/wiki/bin/view/ALMA/NAASC/Cycle2ImagingWorkflow and also the setup instructions in https://safe.nrao.edu/wiki/bin/view/ALMA/Cycle2DataReduction
-#######################################
 
 #######################################
 # Usage:
@@ -21,55 +20,9 @@
 #	SBuid: uid://A001/X122/X33
 #	ASDMs: uid://A002/X98124f/X478d
 #
-# 	pipeline version to source (ex. /lustre/naasc/pipeline/pipeline_env_r31667_casa422_30986.sh)
 # 	location and name of the OT file (ex. /lustre/naasc/elastufk/2013.1.00099.S_v2.aot)
 #########################################
-
-#########################################
-# functions: 
-
-#	untarStuff(project_dict)
-#           Copies tarball from pipetemp, moves it to the working directory and untars the files. Only used for imaging.
-
-#       pipelineChanges()
-#	    Writing modifications to casapiperestorescript if planets were used as calibration sources. Only used for imaging.
-
-#	makeDirectories(project_dict)
-#	    Makes Reduce_XXXX directory (Imaging and Manual) and directory tree (Manual)
-
-#	downloadASDM(project_dict)
-#	    Downloads the ASDMs associated with the SB by running ASDMExportLight. Changes the names of the asdms (Imaging) and generates the manual reduction script (Manual)
-
-#	copyFiles(project_dict)
-#	    Copies the *_flagtemplate.txt files from calibration directory to /lustre/naasc/PipelineTestData/flagfiles, and add template filename, project code, MOUS, and SB name to /lustre/naasc/PipelineTestData/flagfiles/listflagfiles.txt
-    
-#	testcopyFiles(project_dict):
-#	    A test version of copyFiles that doesn't actually copy or write the files. Use when testing to avoid filling up the flagfiles and listflagfiles.txt unneccesarily
-
-#	runPipeline(project_dict)
-#	    Sources the specified pipeline version and runs scriptForPI. Only used for imaging.
-
-#	untarWeblog(project_dict)
-#	    Untars the weblog reports from the /qa directory. Only used for imaging.
-
-#	getScript(project_dict)
-#	    Downloads the imaging script template.
-
-#	fillReadme(project_dict, AOT=False)
-#	    Fills out the header information in the README
-
-#	testmain()
-#	    Tests the functionality using predefined dictionaries.
-
-#	main()
-#	    For imaging: 
-#	    Asks the user to enter information about the project, downloads and untars data from pipetemp, runs ASDMExportLight and the pipeline, applies fixes to the piperestore script, copies the flagtemplate files over, gets the imaging script, untars the weblog, fills the readme, and generates the file imaging_parameters.txt
-#	    For manual reduction:
-#	        Creates the directory tree, runs ASDMExportLight and generates calibration script, fills the readme, asks the user whether or not to run the script through once and generate weblog plots in a pdf
-
-########################################
-
-
+"""
 import os
 import urllib2
 import subprocess
@@ -86,12 +39,13 @@ import sys
 
 #moving to my directory, unpacking the tar-ball, renaming the extracted files, and removing the tarball
 def untarStuff(project_dict):
+    """Copies tarball from pipetemp, moves it to the working directory and untars the files. Only used for imaging."""
     tarball = project_dict['tarball']
     project_path = project_dict['project_path']
-    os.chdir('/lustre/naasc/pipetemp')
+    os.chdir('/lustre/naasc/sciops/pipetemp')
 
     if os.path.isfile(tarball) == True:
-        os.system('cp /lustre/naasc/pipetemp/%s %s' % (tarball, project_path))
+        os.system('cp /lustre/naasc/sciops/pipetemp/%s %s' % (tarball, project_path))
         os.chdir('%s' % project_path)    
         os.system('tar -xvzf %s' % tarball)
         alias = tarball[0:-4]
@@ -103,6 +57,7 @@ def untarStuff(project_dict):
         sys.exit('The file %s is not in pipetemp, or failed to copy over properly' % tarball) 
 
 def oldpipelineChanges():
+    """Old version of pipelineChanges() that doesn't check for the existing lines first, resulting in duplications."""
     os.chdir('script')
 
     mods = open('casa_restore_modification.txt', 'w')
@@ -143,7 +98,7 @@ def oldpipelineChanges():
     os.chdir('../') 
 
 def pipelineChanges():
-
+    """Writing modifications to casapiperestorescript if planets were used as calibration sources. Only used for imaging."""
     os.chdir('script')
     #just in case ... will add a line in the cleanup bash script to get rid of these:
     os.system('cp casa_piperestorescript.py casa_piperestorescript.py.original')
@@ -204,6 +159,7 @@ def pipelineChanges():
     os.chdir('../') 
 
 def makeDirectories(project_dict): 
+    """Makes Reduce_XXXX directory (Imaging and Manual) and directory tree (Manual)"""
     if os.path.isdir('%s' % project_dict['project_path']) == False:
          os.system('mkdir %s' % project_dict['project_path'])
     if project_dict['project_type'] == 'Manual':
@@ -222,32 +178,38 @@ def makeDirectories(project_dict):
        os.chdir('../../')
 
 #Downloading the ASDMs and renaming them
-def downloadASDM(project_dict):
+def downloadASDM(project_dict, lbc=False):
+    """Downloads the ASDMs associated with the SB by running ASDMExportLight. Changes the names of the asdms (Imaging) and generates the manual reduction script (Manual)"""
     project_type = project_dict['project_type']
     asdm = project_dict['asdm']
-
+    #asdm = asdm[1:] #EL not permanent
     if project_type == 'Imaging':
         if os.path.isdir('raw') == False:
             os.system('mkdir raw')
         os.chdir('raw')
         for current_asdm in asdm: #range(0,asdm_num)
-	    subprocess.call(['source /lustre/naasc/pipeline/pipeline_env.asdmExportLight.sh && asdmExportLight %s' % current_asdm], shell=True)
+	    subprocess.call(['source /lustre/naasc/sciops/pipeline/pipeline_env.asdmExportLight.sh && asdmExportLight %s' % current_asdm], shell=True)
 	    #changing the names of the usdm to match when it was changed by asdmExport
 	    new_asdm = current_asdm.replace('/','_').replace(':','_')
 	    os.system('mv %r %r.asdm.sdm' % (new_asdm, new_asdm))
         os.chdir('../')
     else:
         script_name=[]
-        for asdm in asdm:
-	    os.chdir('Calibration_%s' % str(asdm[asdm.rfind('X'):]))
-	    subprocess.call(['source /lustre/naasc/pipeline/pipeline_env.asdmExportLight.sh && asdmExportLight %s' % asdm], shell=True)
+        for current_asdm in asdm:
+            #IPython.embed()
+	    os.chdir('Calibration_%s' % str(current_asdm[current_asdm.rfind('X'):]).strip())
+	    subprocess.call(['source /lustre/naasc/sciops/pipeline/pipeline_env.asdmExportLight.sh && asdmExportLight %s' % current_asdm], shell=True)
 	    #changing the names of the asdm to match when it was changed by asdmExport
-	    new_asdm = asdm.replace('/','_').replace(':','_')
+	    new_asdm = current_asdm.replace('/','_').replace(':','_')
+            #IPython.embed()
             print "Generating script... if this crashes, specify a reference antenna eg. es.generateReducScript(new_asdm, refant='CM06')"
-            subprocess.call(["casa", "-c", "es.generateReducScript(\'%s\')" % new_asdm])
+            if lbc ==True:
+                subprocess.call(["casa", "-c", "es.generateReducScript(\'%s\', lbc=True)" % new_asdm])
+            else:
+                subprocess.call(["casa", "-c", "es.generateReducScript(\'%s\')" % new_asdm])
             #script_name.append(new_asdm + '.scriptForCalibration.py')
             #es.generateReducScript(new_asdm, refant='CM06')
-            os.chdir('../')
+                os.chdir('../')
         return script_name
 
 
@@ -255,14 +217,15 @@ def downloadASDM(project_dict):
 #Add template filename, project code, MOUS, and SB name to /lustre/naasc/PipelineTestData/flagfiles/listflagfiles.txt
 
 def copyFiles(project_dict):
+    """Copies the *_flagtemplate.txt files from calibration directory to /lustre/naasc/PipelineTestData/flagfiles, and add template filename, project code, MOUS, and SB name to /lustre/naasc/PipelineTestData/flagfiles/listflagfiles.txt"""
     project_number = project_dict['project_number']
     mous_code = project_dict['mous_code']
     SB_name = project_dict['SB_name']
 
     os.chdir('calibration')
-    os.system('cp *_flagtemplate.txt /lustre/naasc/PipelineTestData/flagfiles')
+    os.system('cp *_flagtemplate.txt /lustre/naasc/sciops/PipelineTestData/flagfiles')
     flag_templates = glob.glob('*_flagtemplate.txt')
-    flag_file = open('/lustre/naasc/PipelineTestData/flagfiles/listflagfiles.txt', 'a')
+    flag_file = open('/lustre/naasc/sciops/PipelineTestData/flagfiles/listflagfiles.txt', 'a')
     for i in flag_templates:
 	string = '%s\t%s\t%s\t%s\n' % (i, project_number, mous_code, SB_name)
 	flag_file.write(string)
@@ -270,6 +233,7 @@ def copyFiles(project_dict):
     os.chdir('../')
 
 def testcopyFiles(project_dict):
+    """A test version of copyFiles that doesn't actually copy or write the files. Use when testing to avoid filling up the flagfiles and listflagfiles.txt unneccesarily"""
     project_number = project_dict['project_number']
     mous_code = project_dict['mous_code']
     SB_name = project_dict['SB_name']
@@ -287,20 +251,29 @@ def testcopyFiles(project_dict):
 #Moving to the script directory and running the pipeline - figure out the pipeline version first: 
 
 def runPipeline(project_dict): 
+    """Sources the specified pipeline version and runs scriptForPI. Only used for imaging."""
     if project_dict['casa_version'] == '':
         version = pi.casa_version()
     else:
         version = project_dict['casa_version']
     if version == '4.2.2':
-        pipeline_path = '/lustre/naasc/pipeline/pipeline_env_r31667_casa422_30986.sh'
+        #pipeline_path = '/lustre/naasc/sciops/pipeline/pipeline_env_r31667_casa422_30986.sh'
+        pipeline_path = '/home/casa/packages/RHEL6/release/casapy-42.2.30986-pipe-1-64b/casapy --pipeline'
     elif version == '4.3.1':
-        pipeline_path =  '/lustre/naasc/pipeline/pipeline_env_r34044_casa431_r32491.sh'
+        #pipeline_path =  '/lustre/naasc/sciops/pipeline/pipeline_env_r34044_casa431_r32491.sh'
+        pipeline_path = '/home/casa/packages/RHEL6/release/casa-release-4.3.1-pipe-el6/casapy --pipeline'
+        #pipeline_path = 'casa -r 4.3.1-pipe-el6 '
+    else:
+        version == '4.5.0'
+        #pipeline_path = 'casa -r 4.5.0' #no pipeline yet but need to run in 4.5 else error
+        pipeline_path = '/home/casa/packages/RHEL6/release/casa-release-4.5.0-el6/casapy'
     os.chdir('script')
-    subprocess.call(['source %s && casapy -c scriptForPI.py' % pipeline_path], shell=True, executable='/bin/bash')
+    subprocess.call(['%s -c scriptForPI.py' % pipeline_path], shell=True, executable='/bin/bash')
     os.chdir('../')
 
 #Untar the weblog reports from the /qa directory
 def untarWeblog():
+    """Untars the weblog reports from the /qa directory. Only used for imaging."""
     os.chdir('qa/')
     weblog = glob.glob('*.weblog.tar.gz')
     if os.path.isfile(weblog[0]):
@@ -311,6 +284,7 @@ def untarWeblog():
 
 #Moving into /calibrated and downloading the latest version of the imaging script template
 def getScript(project_dict):
+    """Downloads the imaging script template. No longer called in main() because the script generator is used."""
     project_type = project_dict['project_type']
     os.chdir(project_dict['project_path'])
     if project_type == 'Imaging':
@@ -325,6 +299,7 @@ def getScript(project_dict):
 
 #Calling Erica's code that will pre-fill the README for me
 def fillReadme(project_dict, AOT=False):
+    """Fills out the header information in the README"""
     #print AOT, project_dict['SB_name']
     AOT_dict = OT_info.getOTinfo(project_dict['SB_name'],AOTpath=AOT)
     AOTdir = AOT_dict[0]
@@ -335,6 +310,7 @@ def fillReadme(project_dict, AOT=False):
     return AOT_dict
 
 def generate_script(project_dict, OT_dict, comments=True):
+    """Generates a custom imaging script. Only used for imaging."""
     os.chdir(project_dict['project_path'])
     parameters = sg.get_parameters(project_dict = project_dict, OT_dict = OT_dict) 
     script = sg.script_data_prep(parameters, project_dict, comments)
@@ -354,7 +330,12 @@ def generate_script(project_dict, OT_dict, comments=True):
     OT_info.cleanup(parameters['AOT'])
 
 
-def main(): # will ask for the OT file twice ... fix that
+def main(lbc=False): # will ask for the OT file twice ... fix that
+    """For imaging: 
+	    Asks the user to enter information about the project, downloads and untars data from pipetemp, runs ASDMExportLight and the pipeline, applies fixes to the piperestore script, copies the flagtemplate files over, gets the imaging script, untars the weblog, fills the readme, and generates the file imaging_parameters.txt
+For manual reduction:
+        Creates the directory tree, runs ASDMExportLight and generates calibration script, fills the readme, asks the user whether or not to run the script through once and generate weblog plots in a pdf
+    """
     project_dict = pi.main()
     OTfile = OT_info.getAOT(project_number=project_dict['project_number']) 
     makeDirectories(project_dict)
@@ -364,7 +345,7 @@ def main(): # will ask for the OT file twice ... fix that
         project_dict['casa_version'] = pi.casa_version()
         if project_dict['casa_version'] != '4.3.1':
             pipelineChanges()
-        downloadASDM(project_dict)
+        downloadASDM(project_dict,lbc=lbc)
         copyFiles(project_dict) #don't actually do this yet
         #project_dict['casa_version'] = pi.casa_version()
         runPipeline(project_dict)
@@ -380,7 +361,7 @@ def main(): # will ask for the OT file twice ... fix that
         #getScript(project_dict)
         OT_dict = fillReadme(project_dict, AOT=OTfile)
 	for asdm in project_dict['asdm']:
-	    os.chdir('%s/Calibration_%s' % (project_dict['project_path'],str(asdm[-4:])))
+	    os.chdir('%s/Calibration_%s' % (project_dict['project_path'],str(asdm[asdm.rfind('X'):]).lstrip()))
 	    ms_name = glob.glob('*.ms')
 	    snr = subprocess.Popen(["casa", "-c", "au.gaincalSNR(\'%s\')" % ms_name[0]], shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT) #this doesn't work yet for some reason...
 	    snr.wait()
