@@ -1,4 +1,4 @@
-#######################################
+"""#######################################
 # fill_README.py
 # Erica Lastufka 08/20/2015 
 
@@ -24,31 +24,8 @@
 #	SBName: NGC253_a_06_TE
 #	SBuid: uid://A001/X122/X33
 #	ASDMs: uid://A002/X98124f/X478d
-#
-# 	OPTIONAL pipeline version to source (ex. /lustre/naasc/pipeline/pipeline_env_r31667_casa422_30986.sh)
-# 	location and name of the OT file (ex. /lustre/naasc/elastufk/2013.1.00099.S_v2.aot)
 #########################################
-
-#########################################
-# functions: 
-
-#	getInfo(project_dict, OT_dict)
-#           Gets PI name, project title, and proposed rms from the XML
-
-#       write2Readme(project_type, project_path, project_info, version)
-#	    Writes header information to READMe
-
-#	testwrite()
-#	    test method for writing 
-
-#	cleanup(AOTdir)
-#	    removes temp directory
-
-#	main(project_dict=False, AOT=False)
-#	    Asks the user for project information or reads the information from the provided dictionaries to write to the README
-
-######################################### 
-
+"""
 #import glob
 import numpy as np
 import xml.etree.ElementTree as ET
@@ -56,9 +33,10 @@ import os
 import glob
 import OT_info 
 import project_info
-
+import list_imparameters as li
     
 def getInfo(project_dict, OT_dict):
+    """Gets PI name, project title, and proposed rms from the XML"""
     XMLroots = OT_dict[1]
     prop_root = XMLroots['prop_root']
     proj_root = XMLroots['proj_root']
@@ -81,10 +59,20 @@ def getInfo(project_dict, OT_dict):
     rms = science_root.find('.//sbl:ScienceParameters/sbl:sensitivityGoal', namespaces) 
     unit = rms.attrib
 
-    project_info = {'project_number': project_dict['project_number'], 'SB_name': project_dict['SB_name'], 'PI_name': PI_name[0].text, 'title': title.text, 'rms': rms.text, 'rms_unit': unit['unit']}
+    # get beam size
+    scigoal = prop_root.findall('.//prj:ScienceGoal', namespaces)
+    beam_size = scigoal[int(OT_dict[0]['science_goal'])].find('prj:PerformanceParameters/prj:desiredAngularResolution', namespaces)
+    beam_unit = beam_size.attrib['unit']
+    beam = beam_size.text + beam_unit
+
+    # get number of EBs
+    nms = li.getnum_ms(project_dict['project_type'], project_dict['project_path'])
+
+    project_info = {'project_number': project_dict['project_number'], 'SB_name': project_dict['SB_name'], 'PI_name': PI_name[0].text, 'title': title.text, 'rms': rms.text, 'rms_unit': unit['unit'], 'beam_size': beam,'nms':str(nms)}
     return project_info
 
 def write2Readme(project_type, project_path, project_info, version):
+    """Writes header information to README"""
     # go to directory
     if project_path[len(project_path)-1] != '/': 
         project_path = project_path + '/'
@@ -99,7 +87,7 @@ def write2Readme(project_type, project_path, project_info, version):
         #version = '4.4.0'
     
     if os.path.isfile('README.header.txt') != True:
-       os.system('cp -i /users/thunter/AIV/science/qa2/README.header.cycle2.txt README.header.txt')
+       os.system('cp -i /users/thunter/AIV/science/qa2/README.header.cycle3.txt README.header.txt')
     os.system('pwd')
     readme = open('README.header.txt','r') 
     rinfo = readme.readlines()
@@ -110,7 +98,9 @@ def write2Readme(project_type, project_path, project_info, version):
     rinfo[8] = 'Project title: ' + project_info['title'] +'\n'
     #rinfo[9] = 'Configuration: ' + config + cunit +'\n'
     rinfo[10] = 'Proposed rms: ' + project_info['rms'] +' ' + project_info['rms_unit'] + ' (line)\n'
-    rinfo[11] = 'CASA version used for reduction: ' + version +'\n'
+    rinfo[11] = 'Proposed beam size: ' + project_info['beam_size'] +'\n'
+    rinfo[12] = 'CASA version used for reduction: ' + version +'\n'
+    rinfo[14] = 'Total Number of Member EBs in this OUS Group:' + project_info['nms'] + '\n'
 
     os.mknod('readme.txt')
     readmenew = open('readme.txt', 'w')
@@ -121,11 +111,13 @@ def write2Readme(project_type, project_path, project_info, version):
     os.system('chmod 666 README.header.txt')
 
 def cleanup(AOT):
+    """removes temp directory"""
     AOTdir = AOT[0:AOT.rfind('/')]
     os.chdir(AOTdir)
     os.system('rm -rf temp/')
 
 def main(project_dict=False, AOT=False):
+    """Asks the user for project information or reads the information from the provided dictionaries to write to the README"""
     if project_dict == False:
         project_dict = project_info.main()
     if AOT == False:
@@ -138,5 +130,5 @@ def main(project_dict=False, AOT=False):
     #fill_README.testwrite()
     cleanup(AOTdir['AOT'])
 
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+#    main()
