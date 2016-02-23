@@ -1,6 +1,6 @@
-#######################################
+"""#######################################
 # readme_comments.py
-# Erica Lastufka 08/20/2015 
+# Erica Lastufka 11/02/2015 
 
 #Description: Generates sentences that will be written to readme, based on the script. Comments beginning with #README, #readme, or #R will be written to the readme and then erased by my_strip_instructions.py
 #######################################
@@ -17,6 +17,7 @@
 # sg.generate('SB_name','project_directory')
 
 #######################################
+"""
 import IPython
 
 def projecttype(): # get type from folders
@@ -74,7 +75,7 @@ def linewidth(lines):
             width = 'The %s line was imaged with a velocity width of %s. It had ' % (l,w)
             break
         else:
-            width = ''
+            width = "The %s line was imaged with a velocity width of [insert width here]" % (l)
     #width = 'The %s line was imaged with a velocity width of %s. It had ' % (l,w)
     return width
 
@@ -139,7 +140,7 @@ def strip_all_instructions(keywords, infilename): #slight modification of Amanda
     backupfilename = infilename + '.backup'
 
     if os.path.isfile(backupfilename):
-        print "Backup file exists! Stopping."
+        print "Backup file exists! Stopping." # should I leave this in here?
         return
     else:
         print "Moving " + infilename + " to " + backupfilename +"."
@@ -214,8 +215,8 @@ def readme_comments():
     readme = open('README.header.txt','r') 
     readme.close
     rinfo = readme.readlines()
-    rinfo[13] = text
-    readme.writelines(rinfo)
+    rinfo[16] = text
+    #readme.writelines(rinfo)
     os.mknod('readme.txt')
     readmenew = open('readme.txt', 'w')
     
