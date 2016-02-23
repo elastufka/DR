@@ -36,6 +36,7 @@ import list_imparameters as li
 import script_generator as sg
 import IPython
 import sys
+import multiprocessing 
 
 #moving to my directory, unpacking the tar-ball, renaming the extracted files, and removing the tarball
 def untarStuff(project_dict):
@@ -159,7 +160,7 @@ def pipelineChanges():
     os.chdir('../') 
 
 def makeDirectories(project_dict): 
-    """Makes Reduce_XXXX directory (Imaging and Manual) and directory tree (Manual)"""
+    """Makes reduction directory (Imaging and Manual) and directory tree (Manual)"""
     if os.path.isdir('%s' % project_dict['project_path']) == False:
          os.system('mkdir %s' % project_dict['project_path'])
     if project_dict['project_type'] == 'Manual':
@@ -172,17 +173,16 @@ def makeDirectories(project_dict):
        for asdmn in project_dict['asdm']:
            os.system('mkdir Calibration_%s' % str(asdmn[asdmn.rfind('X'):])) #make it go from the X to the end
        os.system('mkdir Imaging')
-       os.system('mkdir Combination')
-       os.chdir('Combination')
-       os.system('mkdir calibrated')
-       os.chdir('../../')
+       #os.system('mkdir Combination') #don't do this anymore
+       #os.chdir('Combination')
+       #os.system('mkdir calibrated')
+       os.chdir('../')
 
 #Downloading the ASDMs and renaming them
 def downloadASDM(project_dict, lbc=False):
     """Downloads the ASDMs associated with the SB by running ASDMExportLight. Changes the names of the asdms (Imaging) and generates the manual reduction script (Manual)"""
     project_type = project_dict['project_type']
     asdm = project_dict['asdm']
-    #asdm = asdm[1:] #EL not permanent
     if project_type == 'Imaging':
         if os.path.isdir('raw') == False:
             os.system('mkdir raw')
@@ -212,7 +212,40 @@ def downloadASDM(project_dict, lbc=False):
                 os.chdir('../')
         return script_name
 
-
+#Downloading the ASDMs and renaming them
+def downloadASDM_parallel(input_array):
+    """Downloads the ASDMs associated with the SB by running ASDMExportLight. Changes the names of the asdms (Imaging) and generates the manual reduction script (Manual). Does this using multiprocess"""
+    #input array is: ['project_type','asdm','lbc']
+    project_type = input_array[0]
+    asdm = input_array[1]
+    lbc= input_array[2]
+    #asdm = asdm[1:] #EL not permanent
+    if project_type == 'Imaging':
+        if os.path.isdir('raw') == False:
+            os.system('mkdir raw')
+        os.chdir('raw')
+        #for current_asdm in asdm: #range(0,asdm_num)
+	subprocess.call(['source /lustre/naasc/sciops/pipeline/pipeline_env.asdmExportLight.sh && asdmExportLight %s' % asdm], shell=True)
+	#changing the names of the usdm to match when it was changed by asdmExport
+	new_asdm = asdm.replace('/','_').replace(':','_')
+	os.system('mv %r %r.asdm.sdm' % (new_asdm, new_asdm))
+        os.chdir('../')
+    else:
+        script_name=[]
+        #for current_asdm in asdm:
+	os.chdir('Calibration_%s' % str(asdm[asdm.rfind('X'):]).strip())
+	subprocess.call(['source /lustre/naasc/sciops/pipeline/pipeline_env.asdmExportLight.sh && asdmExportLight %s' % asdm], shell=True)
+	#changing the names of the asdm to match when it was changed by asdmExport
+        new_asdm = asdm.replace('/','_').replace(':','_')
+        print "Generating script... if this crashes, specify a reference antenna eg. es.generateReducScript(new_asdm, refant='CM06')"
+        if lbc ==True:
+            subprocess.call(["casa", "-c", "es.generateReducScript(\'%s\', lbc=True)" % new_asdm])
+        else:
+            subprocess.call(["casa", "-c", "es.generateReducScript(\'%s\')" % new_asdm])
+            #script_name.append(new_asdm + '.scriptForCalibration.py')
+            #es.generateReducScript(new_asdm, refant='CM06')
+        os.chdir('../')
+        return script_name
 #Copying the *_flagtemplate.txt files from calibration directory to /lustre/naasc/PipelineTestData/flagfiles 
 #Add template filename, project code, MOUS, and SB name to /lustre/naasc/PipelineTestData/flagfiles/listflagfiles.txt
 
@@ -266,7 +299,7 @@ def runPipeline(project_dict):
     else:
         version == '4.5.0'
         #pipeline_path = 'casa -r 4.5.0' #no pipeline yet but need to run in 4.5 else error
-        pipeline_path = '/home/casa/packages/RHEL6/release/casa-release-4.5.0-el6/casapy'
+        pipeline_path = '/home/casa/packages/RHEL6/release/casa-release-4.5.0-el6/casapy --pipeline'
     os.chdir('script')
     subprocess.call(['%s -c scriptForPI.py' % pipeline_path], shell=True, executable='/bin/bash')
     os.chdir('../')
@@ -329,6 +362,8 @@ def generate_script(project_dict, OT_dict, comments=True):
     # cleanup temp files
     OT_info.cleanup(parameters['AOT'])
 
+def start_process():
+    multiprocessing.current_process().name 
 
 def main(lbc=False): # will ask for the OT file twice ... fix that
     """For imaging: 
@@ -346,6 +381,15 @@ For manual reduction:
         if project_dict['casa_version'] != '4.3.1':
             pipelineChanges()
         downloadASDM(project_dict,lbc=lbc)
+        '''
+        #input array is: ['project_type','asdm','lbc']
+        input_array = []
+        for asdm in project_dict['asdm']:
+            input_array.append([project_dict['project_type'], asdm, lbc])
+        pool_size = multiprocessing.cpu_count() * 4
+        pool = multiprocessing.Pool(processes=pool_size, initializer=start_process,)
+        pool_outputs= pool.map(downloadASDM_parallel, input_array)
+        '''
         copyFiles(project_dict) #don't actually do this yet
         #project_dict['casa_version'] = pi.casa_version()
         runPipeline(project_dict)
@@ -358,8 +402,15 @@ For manual reduction:
     else : 
         os.chdir('%s' % project_dict['project_path'])
         script_name = downloadASDM(project_dict)
+        '''
+        pool_size = multiprocessing.cpu_count() * 4
+        pool = multiprocessing.Pool(processes=pool_size, initializer=start_process,)
+        pool_outputs= pool.map(downloadASDM_parallel, project_dict[asdm], lbc=lbc)
+        script_name=pool_outputs
+        '''
         #getScript(project_dict)
         OT_dict = fillReadme(project_dict, AOT=OTfile)
+        '''
 	for asdm in project_dict['asdm']:
 	    os.chdir('%s/Calibration_%s' % (project_dict['project_path'],str(asdm[asdm.rfind('X'):]).lstrip()))
 	    ms_name = glob.glob('*.ms')
@@ -372,6 +423,7 @@ For manual reduction:
             text = open('gaincalSNR.txt','w')
             text.writelines(gaincal[0])
             text.close()
+        '''
         #runscript = raw_input('Run calibration script through and check the visibilities by generating a pdf of the weblog plots? Warning - this will take a while and do it for all the asdms!')
         #os.chdir('../')
         #if runscript == 'Y':
