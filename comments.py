@@ -44,6 +44,45 @@ def header():
     header = header1 + gendate + header2
     return header
 
+def header():
+    header1 = "#>>> ======================================================================================#\n\
+#>>>                          TEMPLATE IMAGING SCRIPT                                       #\n\
+#>>> =====================================================================================#\n\
+#>>> \n"
+#    ts = time.time()
+#    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+#    gendate = '#>>> Generated at ' + st + ' local time by <script_generator.py>\n'
+#
+    gendate = '#>>> Updated: Tue Dec  1 14:10:46 EST 2015\n'
+    header2 = "#>>> \n\
+#>>> Lines beginning with '#>>>' are instructions to the data imager\n\
+#>>> and will be removed from the script delivered to the PI. If you \n\
+#>>> would like to include a comment that will be passed to the PI, begin\n\
+#>>> the line with a single '#', i.e., standard python comment syntax.\n\
+#>>>\n\
+#>>> Helpful tip: Use the commands %cpaste or %paste to copy and paste\n\
+#>>> indented sections of code into the casa command line.\n\
+#>>>\n\
+#>>>--------------------------------------------------------------------------------------#\n\
+#>>>                     Data Preparation                                                 #\n\
+#>>> -------------------------------------------------------------------------------------#\n\
+#>>>\n\
+#>>> Below are some example commands for combining your data. All of\n\
+#>>> these commands will not be relevant for all datasets, so think about\n\
+#>>> what would be best for your data before running any commands. For\n\
+#>>> more information, see the NA Imaging Guide\n\
+#>>> (https://staff.nrao.edu/wiki/bin/view/NAASC/NAImagingScripts).\n\
+#>>>\n\
+#>>> These commands should be run prior to undertaking any imaging.\n\
+#>>>>\n\
+#>>> The NA Imaging team is working on generating best\n\
+#>>> practices for this step. Suggestions are welcome!  Please send to\n\
+#>>> akepley@nrao.edu and she'll forward them on to the NA Imaging team.\n\n\
+########################################\n\
+# Check CASA version \n"
+
+    header = header1 + header2
+    return header
 def header_brief():
     header1 = "#>>> ======================================================================================#\n\
 #>>>                          CUSTOM IMAGING SCRIPT                                       #\n\
@@ -76,7 +115,9 @@ def pointing():
     pointing = "########################################\n\
 # Removing pointing table \n\n\
 # This step removes the pointing table from the data to avoid\n\
-# a bug with mosaics in CASA 4.2.2\n"
+# a bug with mosaics in CASA 4.2.2\n\n\
+# DO NOT DO THIS FOR CASA 4.5 AND GREATER! DELETING THE POINTING TABLE\n\
+# WILL CAUSE ISSUES FOR OTF MOSAICS."
     return pointing
 
 def combine():
@@ -93,6 +134,13 @@ def combine():
 # regridded to a single spectral window in the ms. \n "
     return combine
 
+def combine_warning():
+    combine_warning = "\n\
+#>>> DO NOT DO THIS IF YOU HAVE MANUALLY CALIBRATED YOUR DATA. THE\n\
+#>>> COMBINATION HAS ALREADY BEEN DONE AS PART OF THE MANUAL\n\
+#>>> CALIBRATION."
+    return combine_warning
+
 def combine_header():
     combine = "########################################\n\
 # Combining Measurement Sets from Multiple Executions\n"
@@ -102,6 +150,14 @@ def split():
     split = "###################################\n\
 # Splitting off science target data\n\n"
     return split
+
+def split_single():
+    split_single = "#>>> Uncomment following line for single executions\n"
+    return split_single
+
+def split_multiple():
+    split_multiple = "#>>> Uncomment following line for multiple executions\n"
+    return split_multiple
 
 def vishead():
     vishead = "#>>> INCLUDE vishead OUTPUT FOR SCIENCE TARGET AND SPW IDS HERE.\n\n\
@@ -201,6 +257,40 @@ def im_template_header():
 ##################################################\n\
 # Create an Averaged Continuum MS\n\n"
     return im_template
+
+def casa_warning():
+    casa_warning = "#>>> In CASA 4.4 and higher, the behavior of the avgchannel parameter\n\
+#>>> has changed. Now when you plot binned channels, plotms displays\n\
+#>>> the 'bin' number rather than the average channel number of each\n\
+#>>> bin. Amanda is trying to get this behavior changed back to\n\
+#>>> something more sensible\n\n\
+#>>> If you don't see any obvious lines in the above plot, you may to try\n\
+#>>> to set avgbaseline=True with uvrange (e.g., <100m). Limiting the\n\
+#>>> uvrange to the short baselines greatly improves the visibility of\n\
+#>>> lines with extended emission.\n"
+    return casa_warning
+
+def split_versions():
+    split_versions = "# IF YOU ARE USING CASA VERSION 4.4 OR GREATER TO IMAGE, UNCOMMENT THE FOLLOWING. DELETE IF NOT APPROPRRIATE.\n\
+# split2(vis=finalvis,\n\
+#      spw=contspws,      \n\
+#      outputvis=contvis,\n\
+#      width=[128,128,3840,3840], # number of channels to average together. change to appropriate value for each spectral window in contspws (use listobs or vishead to find) and make sure to use the native number of channels per SPW (that is, not the number of channels left after flagging any lines)\n\
+#      datacolumn='data')\n\
+\n\
+# IF YOU ARE USING CASA VERSION 4.3 AND BELOW TO IMAGE, UNCOMMENT THE FOLLOWING. DELETE IF NOT APPROPRIATE.\n\
+# split(vis=finalvis,\n\
+#       spw=contspws,      \n\
+#       outputvis=contvis,\n\
+#       width=[128,128,3840,3840], # number of channels to average together. change to appropriate value for each\n\
+spectral window in contspws (use listobs or vishead to find) and make sure to use the native number of channels per SPW (that is, not the number of channels left after flagging any lines)\n\
+#       datacolumn='data')\n\
+\n\
+# Note: There is a bug in split that does not average the data\n\
+# properly if the width is set to a value larger than the number of\n\
+# channels in an SPW. Specifying the width of each spw (as done above)\n\
+# is necessary for producing properly weighted data.\n"
+    return split_versions
 
 def source_param():
     source_param = "# #############################################\n\

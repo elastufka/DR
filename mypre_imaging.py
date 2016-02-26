@@ -33,7 +33,7 @@ import project_info as pi
 import fill_README
 import OT_info
 import list_imparameters as li
-import script_generator as sg
+import script_generator as sg 
 import IPython
 import sys
 import multiprocessing 
@@ -342,23 +342,29 @@ def fillReadme(project_dict, AOT=False):
     #fill_README.cleanup(AOTdir['AOT'])
     return AOT_dict
 
-def generate_script(project_dict, OT_dict, comments=True):
+def generate_script(project_dict, OT_dict, comments=False, split=True, template=False):
     """Generates a custom imaging script. Only used for imaging."""
     os.chdir(project_dict['project_path'])
     parameters = sg.get_parameters(project_dict = project_dict, OT_dict = OT_dict) 
-    script = sg.script_data_prep(parameters, project_dict, comments)
+    script = sg.script_data_prep(parameters, project_dict, comments, template)
+    if split == True:
+        prep_script = script
+        script = ''
     spws = sg.sort_spws(parameters)
     continfo = spws[0]
     lineinfo = spws[1]
     linespws = spws[2]
-    script = sg.make_continuum(script,parameters, project_dict, continfo, comments, flagchannels=False)
-    script = sg.image_setup(script,parameters, comments)
-    script = sg.cont_image(script,parameters, comments)
+    script = sg.make_continuum(script,parameters, project_dict, continfo, comments, template,flagchannels=False)
+    script = sg.image_setup(script,parameters, comments, template)
+    script = sg.cont_image(script,parameters, comments, template)
     if lineinfo != []:
         script = sg.contsub(script,parameters, continfo, linespws, comments)
         script = sg.line_image(script,parameters, lineinfo, comments)
     script = sg.pbcor_fits(script)
-    sg.write_script(script,project_dict, filename = 'scriptForImaging.py')
+    if split == True:
+       sg.write_script(prep_script,project_dict, template, filename = 'scriptForImaging_Prep.py')
+       sg.write_script(script,project_dict, template, filename = 'scriptForImaging.py')
+    #sg.write_script(script,project_dict, filename = 'scriptForImaging.py')
     # cleanup temp files
     OT_info.cleanup(parameters['AOT'])
 

@@ -1,8 +1,8 @@
-#######################################
+"""#######################################
 # list_imparameters.py
 # Erica Lastufka 08/20/2015 
 
-#Description: Gets useful parameters for imaging from the OT XML files and writes them to imaging_parameters.txt. Places this file in the /calibrated/ directory of the current project.
+#Description: Gets useful parameters for imaging from the OT XML files and writes them to imaging_parameters.txt. Places this file in the /calibrated/ directory of the current project. Also used to generate parameter dictionary to pass to the script generator.
 #######################################
 
 #######################################
@@ -28,7 +28,7 @@
 # 	OPTIONAL pipeline version to source (ex. /lustre/naasc/pipeline/pipeline_env_r31667_casa422_30986.sh)
 # 	location and name of the OT file (ex. /lustre/naasc/elastufk/2013.1.00099.S_v2.aot)
 #########################################
-
+"""
 #########################################
 # functions: 
 
@@ -100,7 +100,7 @@ import OT_info
 import project_info 
 import fill_README
 import IPython
-
+import sys
 
 #######################
 # get the relevant parameters
@@ -119,12 +119,13 @@ def getnum_ms(project_type, project_path):
     return nms
 
 def getListobs():
-    variables=subprocess.Popen([ "casa"," -c", " /lustre/naasc/elastufk/Python/casa_stuff.py"], shell=False,         stdout=subprocess.PIPE, stderr=subprocess.STDOUT) 
+    variables=subprocess.Popen([ "casa","-r" "4.3.1" " -c", " /lustre/naasc/users/elastufk/Python/casa_stuff.py"], shell=False,         stdout=subprocess.PIPE, stderr=subprocess.STDOUT) 
     variables.wait()
     stuff = variables.communicate()
     lines = stuff[0].split('\n')
+    print lines
     for line in lines:
-        if line.startswith('Median OBSERVE_TARGET'):
+        if line.startswith('Median OBSERVE_TARGET') or line.startswith('Field'):
             index = lines.index(line)
             break
             #else: #something bad happend with casa...
@@ -152,7 +153,7 @@ def getCell(lines): #will this be true for multiple executions?
         if 'arcsec' in line:
             cellsize = line[2:line.find(",")-1]
             imsize = line[line.find(",")+2:-1] # what if it's a mosaic?
-    return cellsize, imsize
+    return cellsize, imsize[0:imsize.rfind(']')+1]
 
 def getScienceFields(lines, index):
     index = index + 2
@@ -229,12 +230,14 @@ def getSpwInfo(science_root, namespaces, spws): # let's put stuff into an spw di
         for i in range(0,len(kw)):
             if kw[i] in spwtype[n].text: 
                 transition = 'continuum'
+                break
             elif spwtype[n].text == 'Spec__Scan_': #panic
                 spwprint = 'This is a spectral scan ... good luck' + '\n'
                 transition = 'Spectral Scan'
             else: 
                 transition= spwtype[n].text # it's a line with this transition
         spwdict.append({'index': n, 'type': spwtype[n].text, 'nchan': nchan, 'restfreq': spwrfreq[n].text, 'transition': transition})
+        #IPython.embed()
     return spwdict
 
 # get rest frequency
@@ -258,7 +261,8 @@ def getVelWidth(science_root,namespaces, rfreqHz=False):
     elif rwidthunit['unit'] == 'KHz':
         rwidthHz = float(rwidth.text)*1e3
     elif rwidthunit['unit'] == 'm/s':
-        vwidth = rwidth.text
+        vwidth = rwidth.text*(1e-3) # let's go to km/s
+        rwidthunit['unit'] == 'km/s'
     elif rwidthunit['unit'] == 'km/s':
         vwidth = rwidth.text
 
@@ -303,7 +307,6 @@ def genPlotMS(spwinfo, rframe, spw):
 # mosaic? 
 def mosaicBool0riginal(namespaces, projroot,sg):   
     goals = projroot.findall('.//prj:ScienceGoal',namespaces)
-    IPython.embed()
     sci_goal = goals[int(sg)] # won't work for a spectral scan! have to use the name for that one....
     sp = sci_goal.findall('prj:TargetParameters/prj:SinglePoint',namespaces)
     ismosaic = sci_goal.findall('prj:TargetParameters/prj:isMosaic',namespaces)
@@ -318,15 +321,26 @@ def mosaicBool0riginal(namespaces, projroot,sg):
         mosaicbool = 'false'
     return mosaicbool
 
-# yet another attempt at getting a reliable mosaic indicator ....
+# yet another attempt at getting a reliable mosaic indicator .... seems like the best thing to do is count the pointings, since ismosaic is always true
 def mosaicBool(namespaces, science_root, sourceName):   
-    sources = science_root.findall('.//sbl:FieldSource',namespaces)
-    sourcenames = science_root.findall('.//sbl:FieldSource/sbl:sourceName',namespaces)
-
-    for n in range(0, len(sourcenames)):
-        if sourceName == sourcenames[n].text:
-            mosaic = sources[n].findall('sbl:PointingPattern/sbl:isMosaic',namespaces)
-            mosaicbool = mosaic[0].text
+    query = science_root.findall('.//sbl:FieldSource/sbl:isQuery',namespaces) # if false that's the science target 
+    pattern = science_root.findall('.//sbl:FieldSource/sbl:PointingPattern',namespaces)
+    for n in range(0,len(query)):
+        if query[n].text == 'false':
+            #get the # of pointings 
+            pointings=pattern[n].findall('sbl:phaseCenterCoordinates',namespaces)
+            npointings=len(pointings)
+            break 
+        else: 
+            npointings=0
+    #IPython.embed()
+    if npointings > 1:
+        mosaicbool = 'true'
+    elif npointings == 0:
+        print "Couldn't find information about the number of pointings so assuming it's just 1"
+        #error, default to single pointing
+    else:
+        mosaicbool = 'false'
     return mosaicbool
 
 def ismosaic(mosaicbool,lastfield, firstfield): # fix this using mosaicbool
@@ -433,6 +447,8 @@ def writeText(param, info):
 #######################
 
 def main(SB_name = False, project_path = False): 
+    if project_path == False:
+        project_path = os.getcwd()
     dictionaries = project_info.most_info(SBname = SB_name, project_path = project_path)
     OT_dict = dictionaries[1]
     project_dict = dictionaries[0]

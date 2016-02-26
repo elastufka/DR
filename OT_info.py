@@ -66,7 +66,7 @@ def getAOT(project_number=False):
             files = glob.glob('%s*.aot' % project_number)
         else:
             print files
-            AOT=raw_input('Which is the correct file for this project? ')
+            AOT= os.getcwd() + '/' + raw_input('Which is the correct file for this project? ')
 
     return AOT
 
